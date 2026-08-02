@@ -19,6 +19,7 @@ import {
 } from "@opentui/core"
 import * as Locale from "@/util/locale"
 import { go } from "@/cli/logo"
+import { Product } from "@opencode-ai/core/product"
 import type { RunSplashTheme } from "./theme"
 
 export const SPLASH_TITLE_LIMIT = 50
@@ -194,7 +195,7 @@ function build(input: SplashWriterInput, kind: "entry" | "exit", ctx: Scrollback
       })
     }
 
-    push(lines, body_left, top, "LemonCode", right, undefined, TextAttributes.BOLD)
+    push(lines, body_left, top, Product.name, right, undefined, TextAttributes.BOLD)
     if (input.detail) {
       push(
         lines,
@@ -234,7 +235,7 @@ function build(input: SplashWriterInput, kind: "entry" | "exit", ctx: Scrollback
       lines,
       body_left + label.length,
       top + 1,
-      `lemoncode --mini -s ${meta.session_id}`,
+      `${Product.cli} --mini -s ${meta.session_id}`,
       right,
       undefined,
       TextAttributes.BOLD,

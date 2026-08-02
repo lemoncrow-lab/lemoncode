@@ -30,6 +30,7 @@ import {
   type SetSessionModeResponse,
 } from "@agentclientprotocol/sdk"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
+import { Product } from "@opencode-ai/core/product"
 import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import type { AssistantMessage, Message, OpencodeClient, SessionMessageResponse } from "@opencode-ai/sdk/v2"
 import { Context, Effect, Layer, ManagedRuntime } from "effect"
@@ -92,17 +93,17 @@ export function make(input: {
   const initialize = Effect.fn("ACP.initialize")(function* (params: InitializeRequest) {
     const started = performance.now()
     const authMethod: AuthMethod = {
-      description: "Run `lemoncode auth login` in the terminal",
-      name: "Login with lemoncode",
+      description: `Run \`${Product.cli} auth login\` in the terminal`,
+      name: `Login with ${Product.cli}`,
       id: AuthMethodID,
     }
 
     if (params.clientCapabilities?._meta?.["terminal-auth"] === true) {
       authMethod._meta = {
         "terminal-auth": {
-          command: "lemoncode",
+          command: Product.cli,
           args: ["auth", "login"],
-          label: "LemonCode Login",
+          label: `${Product.name} Login`,
         },
       }
     }
@@ -128,7 +129,7 @@ export function make(input: {
       },
       authMethods: [authMethod],
       agentInfo: {
-        name: "LemonCode",
+        name: Product.name,
         version: InstallationVersion,
       },
     }
@@ -866,7 +867,7 @@ const promptResponse = Effect.fn("ACP.promptResponse")(function* (
 
 function promptErrorMessage(error: AssistantError) {
   if ("message" in error.data && typeof error.data.message === "string") return error.data.message
-  return "LemonCode prompt failed"
+  return `${Product.name} prompt failed`
 }
 
 function sendUsageUpdate(
@@ -1059,7 +1060,7 @@ function fromUnknownError(error: unknown, service?: string): Error {
   if (isAuthRequired(error)) {
     return new ACPError.AuthRequiredError({ providerId: findProviderID(error) })
   }
-  return new ACPError.ServiceFailureError({ safeMessage: "LemonCode service failure", service })
+  return new ACPError.ServiceFailureError({ safeMessage: `${Product.name} service failure`, service })
 }
 
 function isACPError(error: unknown): error is Error {

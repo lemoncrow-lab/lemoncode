@@ -1,6 +1,7 @@
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { Product } from "@opencode-ai/core/product"
 import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { Client, type ClientOptions } from "@modelcontextprotocol/sdk/client/index.js"
@@ -314,7 +315,7 @@ const layer = Layer.effect(
                 return events
                   .publish(TuiEvent.ToastShow, {
                     title: "MCP Authentication Required",
-                    message: `Server "${key}" requires authentication. Run: lemoncode mcp auth ${key}`,
+                    message: `Server "${key}" requires authentication. Run: ${Product.cli} mcp auth ${key}`,
                     variant: "warning",
                     duration: 8000,
                   })

@@ -15,6 +15,7 @@ import { Config } from "@/config/config"
 import { ConfigMCPV1 } from "@opencode-ai/core/v1/config/mcp"
 import { InstanceRef } from "@/effect/instance-ref"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
+import { Product } from "@opencode-ai/core/product"
 import path from "path"
 import { Global } from "@opencode-ai/core/global"
 import { modify, applyEdits } from "jsonc-parser"
@@ -119,7 +120,7 @@ export const McpListCommand = effectCmd({
 
     if (servers.length === 0) {
       prompts.log.warn("No MCP servers configured")
-      prompts.outro("Add servers with: lemoncode mcp add")
+      prompts.outro(`Add servers with: ${Product.cli} mcp add`)
       return
     }
 
@@ -559,7 +560,7 @@ export const McpAddCommand = effectCmd({
       if (type === "local") {
         const command = await prompts.text({
           message: "Enter command to run",
-          placeholder: "e.g., lemoncode x @modelcontextprotocol/server-filesystem",
+          placeholder: `e.g., ${Product.cli} x @modelcontextprotocol/server-filesystem`,
           validate: (x) => (x && x.length > 0 ? undefined : "Required"),
         })
         if (prompts.isCancel(command)) throw new UI.CancelledError()
@@ -746,7 +747,7 @@ export const McpDebugCommand = effectCmd({
             params: {
               protocolVersion: LATEST_PROTOCOL_VERSION,
               capabilities: {},
-              clientInfo: { name: "lemoncode-debug", version: InstallationVersion },
+              clientInfo: { name: `${Product.cli}-debug`, version: InstallationVersion },
             },
             id: 1,
           }),
@@ -790,7 +791,7 @@ export const McpDebugCommand = effectCmd({
 
           try {
             const client = new Client({
-              name: "lemoncode-debug",
+              name: `${Product.cli}-debug`,
               version: InstallationVersion,
             })
             await client.connect(transport)

@@ -6,6 +6,7 @@ import type {
   OAuthClientInformationFull,
 } from "@modelcontextprotocol/sdk/shared/auth.js"
 import { Effect } from "effect"
+import { Product } from "@opencode-ai/core/product"
 import { McpAuth } from "./auth"
 
 const OAUTH_CALLBACK_PORT = 19876
@@ -43,7 +44,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
   get clientMetadata(): OAuthClientMetadata {
     return {
       redirect_uris: [this.redirectUrl],
-      client_name: "LemonCode",
+      client_name: Product.name,
       client_uri: "https://opencode.ai",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],

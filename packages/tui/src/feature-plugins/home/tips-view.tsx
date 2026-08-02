@@ -2,6 +2,7 @@ import type { TuiPluginApi } from "@opencode-ai/plugin/tui"
 import { createMemo, For, type Accessor } from "solid-js"
 import { DEFAULT_THEMES, useTheme } from "../../context/theme"
 import { useCommandShortcut } from "../../keymap"
+import { Product } from "@opencode-ai/core/product"
 
 const themeCount = Object.keys(DEFAULT_THEMES).length
 
@@ -233,18 +234,18 @@ const TIPS: Tip[] = [
   "Tool definitions can invoke scripts written in Python, Go, etc",
   "Add {highlight}.ts{/highlight} files to {highlight}.opencode/plugins/{/highlight} for event hooks",
   "Use plugins to send OS notifications when sessions complete",
-  "Create a plugin to prevent LemonCode from reading sensitive files",
-  "Use {highlight}lemoncode run{/highlight} for non-interactive scripting",
-  "Use {highlight}lemoncode --continue{/highlight} to resume the last session",
-  "Use {highlight}lemoncode run -f file.ts{/highlight} to attach files via CLI",
+  `Create a plugin to prevent ${Product.name} from reading sensitive files`,
+  `Use {highlight}${Product.cli} run{/highlight} for non-interactive scripting`,
+  `Use {highlight}${Product.cli} --continue{/highlight} to resume the last session`,
+  `Use {highlight}${Product.cli} run -f file.ts{/highlight} to attach files via CLI`,
   "Use {highlight}--format json{/highlight} for machine-readable output in scripts",
-  "Run {highlight}lemoncode serve{/highlight} for headless API access to LemonCode",
-  "Use {highlight}lemoncode run --attach{/highlight} to connect to a running server",
-  "Run {highlight}lc code host update{/highlight} to update LemonCode",
-  "Run {highlight}lemoncode auth list{/highlight} to see all configured providers",
-  "Run {highlight}lemoncode agent create{/highlight} for guided agent creation",
+  `Run {highlight}${Product.cli} serve{/highlight} for headless API access to ${Product.name}`,
+  `Use {highlight}${Product.cli} run --attach{/highlight} to connect to a running server`,
+  `Run {highlight}lc code host update{/highlight} to update ${Product.name}`,
+  `Run {highlight}${Product.cli} auth list{/highlight} to see all configured providers`,
+  `Run {highlight}${Product.cli} agent create{/highlight} for guided agent creation`,
   "Use {highlight}/opencode{/highlight} in GitHub issues/PRs to trigger AI actions",
-  "Run {highlight}lemoncode github install{/highlight} to set up the GitHub workflow",
+  `Run {highlight}${Product.cli} github install{/highlight} to set up the GitHub workflow`,
   "Comment {highlight}/opencode fix this{/highlight} on issues to auto-create PRs",
   "Comment {highlight}/oc{/highlight} on PR code lines for targeted code reviews",
   'Use {highlight}"theme": "system"{/highlight} to match your terminal\'s colors',
@@ -264,7 +265,7 @@ const TIPS: Tip[] = [
   "Run {highlight}/unshare{/highlight} to remove a session from public access",
   "Permission {highlight}doom_loop{/highlight} prevents infinite tool call loops",
   "Permission {highlight}external_directory{/highlight} protects files outside project",
-  "Run {highlight}lemoncode debug config{/highlight} to troubleshoot configuration",
+  `Run {highlight}${Product.cli} debug config{/highlight} to troubleshoot configuration`,
   "Use {highlight}--print-logs{/highlight} flag to see detailed logs in stderr",
   (shortcuts) => `Use ${commandText("/timeline", shortcuts.sessionTimeline())} to jump to specific messages`,
   (shortcuts) => press(shortcuts.messagesToggleConceal(), "to toggle code block visibility in messages"),
@@ -274,7 +275,7 @@ const TIPS: Tip[] = [
     shortcuts.commandList()
       ? `Toggle username display in chat via the command palette (${shortcutText(shortcuts.commandList())})`
       : "Toggle username display in chat via the command palette",
-  "Run {highlight}lc code host status{/highlight} to inspect the managed LemonCode build",
+  `Run {highlight}lc code host status{/highlight} to inspect the managed ${Product.name} build`,
   "Use {highlight}lc code host update{/highlight} to install the newest verified host",
   "Commit your project's {highlight}AGENTS.md{/highlight} file to Git for team sharing",
   "Use {highlight}/review{/highlight} to review uncommitted changes, branches, or PRs",

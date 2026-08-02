@@ -10,6 +10,7 @@ import type {
   TuiAttentionSoundPack,
   TuiAttentionSoundPackInfo,
 } from "@opencode-ai/plugin/tui"
+import { Product } from "@opencode-ai/core/product"
 import { AttentionSoundName, type TuiConfig } from "./config"
 import { Schema } from "effect"
 import stripAnsi from "strip-ansi"
@@ -38,14 +39,14 @@ type TuiAttentionHost = TuiAttention & {
   dispose(): void
 }
 
-const DEFAULT_TITLE = "lemoncode"
+const DEFAULT_TITLE = Product.cli
 const DEFAULT_PACK_ID = "opencode.default"
 const KV_SOUND_PACK = "attention_sound_pack"
 const TITLE_LIMIT = 80
 const MESSAGE_LIMIT = 240
 const BUILTIN_PACK: RegisteredSoundPack = {
   id: DEFAULT_PACK_ID,
-  name: "LemonCode Default",
+  name: `${Product.name} Default`,
   builtin: true,
   sounds: {
     default: defaultSoundPath,

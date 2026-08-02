@@ -2,6 +2,7 @@ import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { OAUTH_DUMMY_KEY } from "../auth"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { OauthCallbackPage } from "@opencode-ai/core/oauth/page"
+import { Product } from "@opencode-ai/core/product"
 import { createServer } from "http"
 import open from "open"
 
@@ -474,8 +475,7 @@ export async function SnowflakeCortexAuthPlugin(_input: PluginInput): Promise<Ho
 
             return {
               url,
-              instructions:
-                "Complete Snowflake sign-in in your browser. LemonCode will capture the OAuth callback and store the bearer token automatically.",
+              instructions: `Complete Snowflake sign-in in your browser. ${Product.name} will capture the OAuth callback and store the bearer token automatically.`,
               method: "auto" as const,
               async callback() {
                 try {

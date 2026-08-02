@@ -4,10 +4,11 @@ import { effectCmd, fail } from "../effect-cmd"
 import { Git } from "@/git"
 import { InstanceRef } from "@/effect/instance-ref"
 import { Process } from "@/util/process"
+import { Product } from "@opencode-ai/core/product"
 
 export const PrCommand = effectCmd({
   command: "pr <number>",
-  describe: "fetch and checkout a GitHub PR branch, then run LemonCode",
+  describe: `fetch and checkout a GitHub PR branch, then run ${Product.name}`,
   builder: (yargs) =>
     yargs.positional("number", {
       type: "number",
@@ -76,11 +77,11 @@ export const PrCommand = effectCmd({
         const sessionMatch = prInfo.body.match(/https:\/\/opncd\.ai\/s\/([a-zA-Z0-9_-]+)/)
         if (sessionMatch) {
           const sessionUrl = sessionMatch[0]
-          UI.println(`Found lemoncode session: ${sessionUrl}`)
+          UI.println(`Found ${Product.cli} session: ${sessionUrl}`)
           UI.println(`Importing session...`)
 
           const importResult = yield* Effect.promise(() =>
-            Process.text(["lemoncode", "import", sessionUrl], { nothrow: true }),
+            Process.text([Product.cli, "import", sessionUrl], { nothrow: true }),
           )
           if (importResult.code === 0) {
             const sessionIdMatch = importResult.text.trim().match(/Imported session: ([a-zA-Z0-9_-]+)/)
@@ -95,13 +96,13 @@ export const PrCommand = effectCmd({
 
     UI.println(`Successfully checked out PR #${prNumber} as branch '${localBranchName}'`)
     UI.println()
-    UI.println("Starting lemoncode...")
+    UI.println(`Starting ${Product.cli}...`)
     UI.println()
 
     const opencodeArgs = sessionId ? ["-s", sessionId] : []
     const code = yield* Effect.promise(
       () =>
-        Process.spawn(["lemoncode", ...opencodeArgs], {
+        Process.spawn([Product.cli, ...opencodeArgs], {
           stdin: "inherit",
           stdout: "inherit",
           stderr: "inherit",
@@ -110,6 +111,6 @@ export const PrCommand = effectCmd({
     )
     // Match legacy throw semantics — propagate as a defect so the top-level
     // index.ts catch handles it identically (exit 1, "Unexpected error" banner).
-    if (code !== 0) return yield* Effect.die(new Error(`lemoncode exited with code ${code}`))
+    if (code !== 0) return yield* Effect.die(new Error(`${Product.cli} exited with code ${code}`))
   }),
 })
