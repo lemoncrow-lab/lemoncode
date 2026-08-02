@@ -1,0 +1,151 @@
+name: LemonCode host
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lemoncode-host
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  sync:
+    name: Sync and validate upstream
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.merge.outputs.changed }}
+      sha: ${{ steps.meta.outputs.sha }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Check out controlled fork
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Merge upstream
+        id: merge
+        run: |
+          git remote add upstream https://github.com/anomalyco/opencode.git
+          git fetch upstream dev
+          if git merge-base --is-ancestor upstream/dev HEAD; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "lemoncrow-sync[bot]"
+          git config user.email "lemoncrow-sync@users.noreply.github.com"
+          git merge --no-edit upstream/dev
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Bun
+        if: steps.merge.outputs.changed == 'true'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        if: steps.merge.outputs.changed == 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Validate downstream controls
+        if: steps.merge.outputs.changed == 'true'
+        run: |
+          bun test packages/core/test/product.test.ts
+          bun --cwd packages/core typecheck
+          bun --cwd packages/tui typecheck
+          bun --cwd packages/opencode typecheck
+
+      - name: Push validated merge
+        if: steps.merge.outputs.changed == 'true'
+        run: git push origin HEAD:dev
+
+      - name: Resolve build revision
+        id: meta
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version=$(python3 -c 'import json; print(json.load(open("packages/opencode/package.json"))["version"])')" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.asset }}
+    needs: sync
+    if: needs.sync.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            asset: linux-x64
+          - runner: ubuntu-24.04-arm
+            asset: linux-arm64
+          - runner: macos-latest
+            asset: darwin-arm64
+          - runner: macos-13
+            asset: darwin-x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out controlled fork revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.sync.outputs.sha }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build LemonCode
+        working-directory: packages/opencode
+        run: bun run script/build.ts --single --skip-embed-web-ui
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: lemoncode-${{ matrix.asset }}
+          path: packages/opencode/dist/lemoncode-${{ matrix.asset }}/bin/lemoncode
+          if-no-files-found: error
+
+  release:
+    name: Publish verified host release
+    needs: [sync, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lemoncode-*
+          path: artifacts
+
+      - name: Package binaries and checksums
+        run: |
+          mkdir -p release
+          for directory in artifacts/lemoncode-*; do
+            asset="$(basename "$directory")"
+            tar -C "$directory" -czf "release/${asset}.tar.gz" lemoncode
+            sha256sum "release/${asset}.tar.gz" > "release/${asset}.tar.gz.sha256"
+          done
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORK_REPO: ${{ github.repository }}
+          HOST_SHA: ${{ needs.sync.outputs.sha }}
+          HOST_VERSION: ${{ needs.sync.outputs.version }}
+        run: |
+          short="${HOST_SHA:0:12}"
+          tag="v${HOST_VERSION}-lemoncode.${short}"
+          if gh release view "$tag" --repo "$FORK_REPO" >/dev/null 2>&1; then
+            gh release upload "$tag" release/* --clobber --repo "$FORK_REPO"
+            exit 0
+          fi
+          gh release create "$tag" release/*             --repo "$FORK_REPO"             --target "$HOST_SHA"             --latest             --title "LemonCode ${HOST_VERSION} (${short})"             --notes "Controlled LemonCode host built from upstream OpenCode ${HOST_VERSION}; downstream source and attribution remain in the fork."
