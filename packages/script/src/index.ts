@@ -74,4 +74,4 @@ export const Script = {
     return team
   },
 }
-console.log(`opencode script`, JSON.stringify(Script, null, 2))
+console.log("lemoncode build", JSON.stringify({ ...Script, team: undefined }, null, 2))
