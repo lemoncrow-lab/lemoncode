@@ -29,12 +29,13 @@ import { DbCommand } from "./cli/cmd/db"
 import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { Heap } from "./cli/heap"
+import { Product } from "@opencode-ai/core/product"
 
 const args = hideBin(process.argv)
 
 function show(out: string) {
   const text = out.trimStart()
-  if (!text.startsWith("opencode ")) {
+  if (!text.startsWith(Product.cli + " ")) {
     process.stderr.write(UI.logo() + EOL + EOL)
     process.stderr.write(text + EOL)
     return
@@ -44,7 +45,7 @@ function show(out: string) {
 
 const cli = yargs(args)
   .parserConfiguration({ "populate--": true })
-  .scriptName("opencode")
+  .scriptName(Product.cli)
   .wrap(100)
   .help("help", "show help")
   .alias("help", "h")
@@ -73,6 +74,9 @@ const cli = yargs(args)
     Heap.start()
 
     process.env.AGENT = "1"
+    process.env.LEMONCODE = "1"
+    process.env.LEMONCODE_PID = String(process.pid)
+    // Compatibility ABI retained for upstream modules and third-party plugins.
     process.env.OPENCODE = "1"
     process.env.OPENCODE_PID = String(process.pid)
   })
