@@ -22,5 +22,5 @@ Internal `@opencode-ai/*` package names and legacy `OPENCODE_*` compatibility
 variables are retained as an ABI. They are not product branding, and retaining
 them keeps upstream merges small and reviewable.
 
-The LemonCrow repository owns scheduled upstream merges, validation, multi-platform
-builds, checksums, release publication, and host installation.
+This repository owns scheduled upstream merges, validation, multi-platform builds,
+checksums, and release publication. LemonCrow owns host installation and policy.

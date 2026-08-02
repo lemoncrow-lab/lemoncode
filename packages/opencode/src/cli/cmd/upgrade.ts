@@ -12,7 +12,7 @@ export const UpgradeCommand = {
     UI.println(UI.logo("  "))
     UI.empty()
     prompts.intro(`Update ${Product.name}`)
-    prompts.log.info("Run `lc code host update` so the signed LemonCode release channel remains authoritative.")
+    prompts.log.info("Run `lc code host update` so the checksummed LemonCode release channel remains authoritative.")
     prompts.outro("No changes made")
   },
 }

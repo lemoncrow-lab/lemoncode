@@ -58,7 +58,7 @@ jobs:
       - name: Validate downstream controls
         if: steps.merge.outputs.changed == 'true'
         run: |
-          bun test packages/core/test/product.test.ts
+          bun --cwd packages/core test test/product.test.ts
           bun --cwd packages/core typecheck
           bun --cwd packages/tui typecheck
           bun --cwd packages/opencode typecheck
@@ -87,7 +87,7 @@ jobs:
             asset: linux-arm64
           - runner: macos-latest
             asset: darwin-arm64
-          - runner: macos-13
+          - runner: macos-15-intel
             asset: darwin-x64
     runs-on: ${{ matrix.runner }}
     steps:
@@ -148,4 +148,9 @@ jobs:
             gh release upload "$tag" release/* --clobber --repo "$FORK_REPO"
             exit 0
           fi
-          gh release create "$tag" release/*             --repo "$FORK_REPO"             --target "$HOST_SHA"             --latest             --title "LemonCode ${HOST_VERSION} (${short})"             --notes "Controlled LemonCode host built from upstream OpenCode ${HOST_VERSION}; downstream source and attribution remain in the fork."
+          gh release create "$tag" release/* \
+            --repo "$FORK_REPO" \
+            --target "$HOST_SHA" \
+            --latest \
+            --title "LemonCode ${HOST_VERSION} (${short})" \
+            --notes "Controlled LemonCode host built from upstream OpenCode ${HOST_VERSION}; downstream source and attribution remain in the fork."
