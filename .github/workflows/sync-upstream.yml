@@ -89,19 +89,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          count="${{ steps.diff.outputs.count }}"
+          branch="${{ steps.merge.outputs.branch }}"
           if [ "${{ steps.merge.outputs.conflicted }}" = "true" ]; then
             title="chore: sync upstream/dev — CONFLICTS need resolution"
-            body="Automated weekly sync of \`upstream/dev\` (anomalyco/opencode), ${{ steps.diff.outputs.count }} new commit(s).
-
-This merge hit conflicts. Conflict markers were committed as-is on \`${{ steps.merge.outputs.branch }}\` — check out the branch, resolve, and push fixes to this PR.
-
-Conflicted files:
-\`\`\`
-$(cat /tmp/conflicts.txt)
-\`\`\`"
+            {
+              echo "Automated weekly sync of \`upstream/dev\` (anomalyco/opencode), ${count} new commit(s)."
+              echo
+              echo "This merge hit conflicts. Conflict markers were committed as-is on \`${branch}\` — check out the branch, resolve, and push fixes to this PR."
+              echo
+              echo "Conflicted files:"
+              echo '```'
+              cat /tmp/conflicts.txt
+              echo '```'
+            } > /tmp/pr-body.md
           else
-            title="chore: sync upstream/dev (${{ steps.diff.outputs.count }} commits)"
-            body="Automated weekly sync of \`upstream/dev\` (anomalyco/opencode), ${{ steps.diff.outputs.count }} new commit(s). Merged cleanly — please review before merging."
+            title="chore: sync upstream/dev (${count} commits)"
+            echo "Automated weekly sync of \`upstream/dev\` (anomalyco/opencode), ${count} new commit(s). Merged cleanly — please review before merging." > /tmp/pr-body.md
           fi
-          gh pr create --repo "$GITHUB_REPOSITORY" --base dev --head "${{ steps.merge.outputs.branch }}" \
-            --title "$title" --body "$body" --label upstream-sync
+          gh pr create --repo "$GITHUB_REPOSITORY" --base dev --head "$branch" \
+            --title "$title" --body-file /tmp/pr-body.md --label upstream-sync
