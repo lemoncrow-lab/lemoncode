@@ -1,0 +1,107 @@
+name: Sync upstream (anomalyco/opencode)
+
+# Periodically catches this fork's `dev` branch up with anomalyco/opencode's
+# `dev` branch and opens a PR for review. Never auto-merges: every run lands
+# as a PR, whether the merge was clean or hit conflicts (conflict markers are
+# committed as-is so a human can resolve them on the branch).
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # every Monday 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "lemoncode-bot"
+          git config user.email "<redacted-email>"
+
+      - name: Ensure upstream-sync label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create upstream-sync --repo "$GITHUB_REPOSITORY" \
+            --color 5319e7 --description "Automated sync from anomalyco/opencode" 2>/dev/null || true
+
+      - name: Skip if a sync PR is already open
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --label upstream-sync --json number --jq 'length')
+          if [ "$existing" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::An upstream-sync PR is already open — skipping this run."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch upstream
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          git remote add upstream https://github.com/anomalyco/opencode.git
+          git fetch upstream dev
+
+      - name: Check for new upstream commits
+        if: steps.guard.outputs.skip == 'false'
+        id: diff
+        run: |
+          count=$(git rev-list --count dev..upstream/dev)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "$count new commit(s) on upstream/dev"
+
+      - name: Merge upstream into a sync branch
+        if: steps.guard.outputs.skip == 'false' && steps.diff.outputs.count != '0'
+        id: merge
+        run: |
+          branch="chore/sync-upstream-$(date -u +%Y%m%d)"
+          git checkout -b "$branch"
+          if git merge upstream/dev --no-edit; then
+            echo "conflicted=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflicted=true" >> "$GITHUB_OUTPUT"
+            git diff --name-only --diff-filter=U > /tmp/conflicts.txt
+            git add -A
+            git commit -m "merge upstream/dev into $branch (unresolved conflicts, needs manual resolution)"
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          git push -u origin "$branch"
+
+      - name: Open PR
+        if: steps.guard.outputs.skip == 'false' && steps.diff.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ steps.merge.outputs.conflicted }}" = "true" ]; then
+            title="chore: sync upstream/dev — CONFLICTS need resolution"
+            body="Automated weekly sync of \`upstream/dev\` (anomalyco/opencode), ${{ steps.diff.outputs.count }} new commit(s).
+
+This merge hit conflicts. Conflict markers were committed as-is on \`${{ steps.merge.outputs.branch }}\` — check out the branch, resolve, and push fixes to this PR.
+
+Conflicted files:
+\`\`\`
+$(cat /tmp/conflicts.txt)
+\`\`\`"
+          else
+            title="chore: sync upstream/dev (${{ steps.diff.outputs.count }} commits)"
+            body="Automated weekly sync of \`upstream/dev\` (anomalyco/opencode), ${{ steps.diff.outputs.count }} new commit(s). Merged cleanly — please review before merging."
+          fi
+          gh pr create --repo "$GITHUB_REPOSITORY" --base dev --head "${{ steps.merge.outputs.branch }}" \
+            --title "$title" --body "$body" --label upstream-sync
