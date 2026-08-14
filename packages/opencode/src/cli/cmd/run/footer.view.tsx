@@ -55,6 +55,7 @@ import type {
 } from "./types"
 import type { RunTheme } from "./theme"
 import { modelInfo } from "./variant.shared"
+import { createLcStatuslineSignal } from "./lc-statusline"
 
 registerOpencodeSpinner()
 
@@ -130,6 +131,7 @@ export function RunFooterView(props: RunFooterViewProps) {
       }
     )
   })
+  const lcStatusline = createLcStatuslineSignal()
   const [route, setRoute] = createSignal<FooterPromptRoute>({ type: "composer" })
   const [subagentMenuRows, setSubagentMenuRows] = createSignal(RUN_SUBAGENT_PANEL_ROWS)
   const queuedPrompts = createMemo(() => props.queuedPrompts?.() ?? [])
@@ -815,6 +817,20 @@ export function RunFooterView(props: RunFooterViewProps) {
             </Show>
 
             <Show when={!panel() && !menu()}>
+              <Show when={lcStatusline().length > 0}>
+                <box width="100%" height={1} flexDirection="row" gap={0} flexShrink={0} backgroundColor="transparent">
+                  <box paddingLeft={1} paddingRight={1} flexShrink={0}>
+                    <text wrapMode="none" truncate>
+                      <span style={{ fg: theme().statusAccent, bold: true }}>{"❯ lc"}</span>
+                    </text>
+                  </box>
+                  <box flexDirection="row" flexGrow={1} flexShrink={1} minWidth={12} paddingRight={1}>
+                    <text fg={theme().muted} wrapMode="none" truncate>
+                      {lcStatusline()}
+                    </text>
+                  </box>
+                </box>
+              </Show>
               <box
                 width="100%"
                 height={1}
